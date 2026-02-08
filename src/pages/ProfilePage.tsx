@@ -8,17 +8,17 @@ type Status = 'loading' | 'success' | 'error';
 function ProfilePage() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const { user, isAuthenticated, client } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const [status, setStatus] = useState<Status>('loading');
   const [error, setError] = useState('');
   const [html, setHtml] = useState('');
-  const [version, setVersion] = useState<string | undefined>();
+  const [, setVersion] = useState<string | undefined>();
 
   // Arweave profile metadata
-  const [txId, setTxId] = useState<string | undefined>();
+  const [, setTxId] = useState<string | undefined>();
   const [profileOwner, setProfileOwner] = useState<string | undefined>();
-  const [profileUsername, setProfileUsername] = useState<string | undefined>();
+  const [, setProfileUsername] = useState<string | undefined>();
 
   // Edit state
   const [isOwner, setIsOwner] = useState(false);

@@ -147,7 +147,7 @@ function imageCardHtml(card: BentoCard, imgSrc: string): string {
   return `<div class="card-inner image-card"><img src="${esc(imgSrc)}" alt="${esc(card.caption || 'Image')}" loading="lazy"/>${caption}</div>`;
 }
 
-function linkCardHtml(card: BentoCard, isDark: boolean): string {
+function linkCardHtml(card: BentoCard, _isDark: boolean): string {
   const url = esc(card.linkUrl) || '#';
   const title = esc(card.linkTitle || card.title) || url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
   const desc = card.linkDescription ? `<p class="link-desc">${esc(card.linkDescription)}</p>` : '';

@@ -1,2 +1,2 @@
-export { uploadHtmlToArweave, generateProfileHtml } from './uploadProfile';
+export { uploadHtmlToArweave } from './uploadProfile';
 export type { UploadResult } from './uploadProfile';

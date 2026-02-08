@@ -40,7 +40,7 @@ export function BentoCard({
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(card.content || '');
-  const [editTitle, setEditTitle] = useState(card.title || '');
+  const [editTitle] = useState(card.title || '');
 
   const handleSave = () => {
     onUpdate({ content: editContent, title: editTitle });

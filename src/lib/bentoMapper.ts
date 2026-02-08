@@ -115,7 +115,7 @@ function mapProfile(bentoProfile: any): UserProfile {
 // --- Card mapping ---
 
 function mapCard(item: any): BentoCard | null {
-  const { data, position } = item;
+  const { data } = item;
   if (!data) return null;
 
   const cardType = mapCardType(data.type);

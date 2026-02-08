@@ -3,7 +3,6 @@ import {
   Youtube,
   Instagram,
   Twitter,
-  Globe,
   Linkedin,
   Github,
   Dribbble,
