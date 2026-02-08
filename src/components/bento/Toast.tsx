@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, X } from 'lucide-react';
+import { CheckCircle2, X, AlertCircle, Info } from 'lucide-react';
 
 interface ToastProps {
   message: string;
@@ -47,7 +47,7 @@ export function Toast({
           <div
             className={`flex items-center gap-3 px-4 py-3 rounded-xl ${bgColor} text-white shadow-lg`}
           >
-            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+            {type === 'error' ? <AlertCircle className="w-5 h-5 flex-shrink-0" /> : type === 'info' ? <Info className="w-5 h-5 flex-shrink-0" /> : <CheckCircle2 className="w-5 h-5 flex-shrink-0" />}
             <span className="text-sm font-medium">{message}</span>
             <button
               onClick={onClose}

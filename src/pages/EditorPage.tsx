@@ -10,8 +10,10 @@ import { ThemePanel } from '@/components/bento/ThemePanel';
 import { ImportDialog } from '@/components/bento/ImportDialog';
 import { LoginModal } from '@/components/bento/LoginModal';
 import { Toast } from '@/components/bento/Toast';
-import { useWallet } from '@/context/WalletContext';
+import { useAuth } from 'arlinkauth/react';
 import { getPageHtml } from '@/actions/getHtml';
+import { uploadHtmlToArweave } from '@/actions/uploadProfile';
+import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
 import '@/App.css';
 
@@ -47,8 +49,11 @@ function EditorPage() {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('info');
 
-  const { isConnected, address } = useWallet();
+  const { isAuthenticated, user, client } = useAuth();
+  const [isUploading, setIsUploading] = useState(false);
+  const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
 
   // Auto-open import dialog if navigated with import URL
   useEffect(() => {
@@ -64,28 +69,52 @@ function EditorPage() {
     }
   }, [claimedUsername, updateProfile]);
 
+  const doUpload = async () => {
+    if (!client) return;
+    setIsUploading(true);
+    setToastType('info');
+    setToastMessage('Generating page...');
+
+    try {
+      const { html } = await getPageHtml(profile, cards, theme);
+      const username = profile.name.replace(/^@/, '').toLowerCase().replace(/[^\x21-\x7e]/g, '') || 'anonymous';
+
+      setToastMessage('Uploading to Arweave...');
+      const result = await uploadHtmlToArweave(html, username, client, user?.arweave_address || '');
+
+      if (result.success && result.txId) {
+        const baseUrl = import.meta.env.VITE_BASE_URL || 'https://rebento_arlink.ar.io';
+        const profileUrl = `${baseUrl}/${username}`;
+        setDeployedUrl(profileUrl);
+        setToastType('success');
+        setToastMessage(`Deployed! Your page is live.`);
+        // Fire confetti
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.7 } });
+        setTimeout(() => confetti({ particleCount: 80, spread: 100, origin: { y: 0.6 } }), 250);
+      } else {
+        setToastType('error');
+        setToastMessage(result.error || 'Upload failed');
+      }
+    } catch (err) {
+      setToastType('error');
+      setToastMessage('Upload failed. Try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleShare = () => {
-    // If already connected, just copy the link
-    if (isConnected && address) {
-      console.log('Already connected:', address);
-      const url = window.location.href;
-      navigator.clipboard.writeText(url);
-      setToastMessage('Link copied to clipboard!');
+    if (isAuthenticated && user) {
+      doUpload();
       return;
     }
-
-    // Otherwise open login modal to connect wallet
     setIsLoginModalOpen(true);
   };
 
-  const handleLoginSuccess = (addr: string) => {
-    console.log('User logged in with address:', addr);
+  const handleLoginSuccess = (_addr: string) => {
     setIsLoginModalOpen(false);
-
-    // Copy link to clipboard and show toast
-    const url = window.location.href;
-    navigator.clipboard.writeText(url);
-    setToastMessage('Link copied to clipboard!');
+    // User just logged in — trigger upload
+    doUpload();
   };
 
   const handlePreview = async () => {
@@ -185,6 +214,8 @@ function EditorPage() {
         isDarkMode={theme.isDarkMode}
         devicePreview={devicePreview}
         accentColor={theme.accentColor}
+        deployedUrl={deployedUrl}
+        isUploading={isUploading}
       />
 
       {/* Widget Drawer */}
@@ -224,6 +255,7 @@ function EditorPage() {
         message={toastMessage || ''}
         isVisible={!!toastMessage}
         onClose={() => setToastMessage(null)}
+        type={toastType}
       />
 
       {/* Click outside to deselect */}

@@ -43,6 +43,18 @@ const Footer = () => {
             <span className="font-semibold text-rebento-text ml-1">Rebento</span>
           </div>
 
+          {/* Powered by Arlink */}
+          <a
+            href="https://arlink.ar.io"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm text-rebento-text-secondary hover:text-rebento-text transition-colors"
+          >
+            Powered by
+            <img src="/arlink.svg" alt="Arlink" className="h-4 w-auto" />
+            <span className="font-medium">Arlink</span>
+          </a>
+
           {/* Copyright */}
           <p className="text-sm text-rebento-text-secondary">
             © 2026 Rebento. All rights reserved.

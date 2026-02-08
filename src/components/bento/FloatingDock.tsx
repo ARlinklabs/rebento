@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Share2,
@@ -7,6 +8,8 @@ import {
   Moon,
   Sun,
   Palette,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +22,8 @@ interface FloatingDockProps {
   isDarkMode: boolean;
   devicePreview: 'desktop' | 'mobile';
   accentColor: string;
+  deployedUrl?: string | null;
+  isUploading?: boolean;
 }
 
 export function FloatingDock({
@@ -30,7 +35,18 @@ export function FloatingDock({
   isDarkMode,
   devicePreview,
   accentColor,
+  deployedUrl,
+  isUploading,
 }: FloatingDockProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    if (!deployedUrl) return;
+    await navigator.clipboard.writeText(deployedUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <motion.div
       initial={{ y: 100, opacity: 0 }}
@@ -43,17 +59,30 @@ export function FloatingDock({
         'shadow-2xl border border-gray-200 dark:border-gray-800'
       )}
     >
-      {/* Share Button */}
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={onShare}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-white transition-colors"
-        style={{ backgroundColor: accentColor }}
-      >
-        <Share2 className="w-4 h-4" />
-        <span className="text-sm">Share my ReBento</span>
-      </motion.button>
+      {/* Share / Copy Link Button */}
+      {deployedUrl ? (
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleCopy}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-white transition-colors bg-green-500"
+        >
+          {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+          <span className="text-sm">{copied ? 'Copied!' : deployedUrl.replace(/^https?:\/\//, '')}</span>
+        </motion.button>
+      ) : (
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onShare}
+          disabled={isUploading}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-white transition-colors disabled:opacity-50"
+          style={{ backgroundColor: accentColor }}
+        >
+          <Share2 className="w-4 h-4" />
+          <span className="text-sm">{isUploading ? 'Deploying...' : 'Share my ReBento'}</span>
+        </motion.button>
+      )}
 
       <div className="w-px h-8 bg-gray-200 dark:bg-gray-700" />
 

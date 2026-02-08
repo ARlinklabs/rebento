@@ -379,7 +379,7 @@ ${cardHtmlParts}
     </div>
   </div>
 </div>
-<div class="footer">Made with <a href="https://rebento.app" target="_blank">ReBento</a> &mdash; Stored permanently on Arweave</div>
+<div class="footer">Made with <a href="https://rebento_arlink.ar.io" target="_blank">ReBento</a> &mdash; Stored permanently on <a href="https://arweave.org" target="_blank">Arweave</a> &mdash; Powered by <a href="https://arlink.ar.io" target="_blank" style="display:inline-flex;align-items:center;gap:4px"><svg width="14" height="15" viewBox="0 0 137 143" fill="none"><path d="M136.999 43.386C136.667 44.1583 116.715 81.5279 74.3746 65.2046C50.7333 56.0913 32.0456 61.3095 19.1802 68.3754L76.2762 0V43.386H136.999Z" fill="#0C9142"/><path d="M115.045 74.1113L57.9138 143V95.9484H0C4.59367 88.5979 25.7269 60.009 69.441 74.333C89.0365 80.7559 103.987 78.9709 115.045 74.1113Z" fill="#0C9142"/></svg>Arlink</a></div>
 </body>
 </html>`;
   }

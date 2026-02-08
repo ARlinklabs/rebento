@@ -1,4 +1,8 @@
-const GQL_ENDPOINT = 'https://arweave.net/graphql';
+const GATEWAYS = [
+  'https://arweave.net',
+  'https://arweave.developerdao.com',
+  'https://g8way.io',
+];
 
 export interface FetchProfileResult {
   success: boolean;
@@ -33,18 +37,17 @@ query FetchProfile($username: String!) {
   }
 }`;
 
-/**
- * Query Arweave for the latest deployed ReBento profile page by username.
- * Returns the HTML content of the most recent version.
- */
-export async function fetchProfileFromArweave(
-  username: string
-): Promise<FetchProfileResult> {
-  try {
-    const normalised = username.toLowerCase().replace(/^@/, '');
+type Edge = {
+  node: { id: string; tags: Array<{ name: string; value: string }> };
+};
 
-    // 1. GQL query to find matching transactions
-    const gqlRes = await fetch(GQL_ENDPOINT, {
+/** Try a single gateway's GQL endpoint. Returns edges or null. */
+async function queryGateway(
+  gateway: string,
+  normalised: string
+): Promise<Edge[] | null> {
+  try {
+    const res = await fetch(`${gateway}/graphql`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -52,45 +55,88 @@ export async function fetchProfileFromArweave(
         variables: { username: normalised },
       }),
     });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const edges: Edge[] = data?.data?.transactions?.edges ?? [];
+    return edges.length > 0 ? edges : null;
+  } catch {
+    return null;
+  }
+}
 
-    if (!gqlRes.ok) {
-      return { success: false, error: `GraphQL request failed: ${gqlRes.status}` };
+/** Try fetching HTML content from gateways in order. */
+async function fetchHtmlFromGateways(txId: string): Promise<string | null> {
+  for (const gw of GATEWAYS) {
+    try {
+      const res = await fetch(`${gw}/${txId}`);
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.length > 0) return text;
+      }
+    } catch {
+      // try next
+    }
+  }
+  return null;
+}
+
+/**
+ * Pick the edge with the highest Version tag (most recent deployment).
+ */
+function pickBestEdge(edges: Edge[]) {
+  let best = edges[0];
+  let bestVersion = 0;
+  for (const edge of edges) {
+    const versionTag = edge.node.tags.find((t) => t.name === 'Version');
+    const v = versionTag ? parseInt(versionTag.value, 10) : 0;
+    if (v > bestVersion) {
+      bestVersion = v;
+      best = edge;
+    }
+  }
+  return { best, bestVersion };
+}
+
+/**
+ * Query Arweave for the latest deployed ReBento profile page by username.
+ * Tries multiple gateways since indexing can take minutes after upload.
+ */
+export async function fetchProfileFromArweave(
+  username: string
+): Promise<FetchProfileResult> {
+  try {
+    const normalised = username.toLowerCase().replace(/^@/, '');
+
+    // 1. Query all gateways in parallel, use first one that returns results
+    const results = await Promise.all(
+      GATEWAYS.map((gw) => queryGateway(gw, normalised))
+    );
+
+    // Merge all edges from all gateways, dedupe by txId, pick best version
+    const allEdges = new Map<string, Edge>();
+    for (const edges of results) {
+      if (!edges) continue;
+      for (const edge of edges) {
+        allEdges.set(edge.node.id, edge);
+      }
     }
 
-    const gqlData = await gqlRes.json();
-    const edges: Array<{
-      node: { id: string; tags: Array<{ name: string; value: string }> };
-    }> = gqlData?.data?.transactions?.edges ?? [];
-
-    if (edges.length === 0) {
+    if (allEdges.size === 0) {
       return { success: false, error: 'Profile not found' };
     }
 
-    // 2. Pick the edge with the highest Version tag (most recent deployment)
-    let best = edges[0];
-    let bestVersion = 0;
-
-    for (const edge of edges) {
-      const versionTag = edge.node.tags.find((t) => t.name === 'Version');
-      const v = versionTag ? parseInt(versionTag.value, 10) : 0;
-      if (v > bestVersion) {
-        bestVersion = v;
-        best = edge;
-      }
-    }
+    const { best, bestVersion } = pickBestEdge([...allEdges.values()]);
 
     const txId = best.node.id;
     const ownerTag = best.node.tags.find((t) => t.name === 'Owner');
     const owner = ownerTag?.value;
 
-    // 3. Fetch the actual HTML content from Arweave
-    const htmlRes = await fetch(`https://arweave.net/${txId}`);
+    // 2. Fetch actual HTML, trying gateways in order
+    const html = await fetchHtmlFromGateways(txId);
 
-    if (!htmlRes.ok) {
-      return { success: false, error: `Failed to fetch page content: ${htmlRes.status}` };
+    if (!html) {
+      return { success: false, error: 'Found profile but could not fetch page content from any gateway.' };
     }
-
-    const html = await htmlRes.text();
 
     return {
       success: true,

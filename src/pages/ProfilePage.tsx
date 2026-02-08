@@ -1,30 +1,27 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchProfileFromArweave } from '@/actions/fetchProfile';
-import { editProfile, validateEditPermission } from '@/actions/editProfile';
-import { useWallet } from '@/context/WalletContext';
+import { useAuth } from 'arlinkauth/react';
 
 type Status = 'loading' | 'success' | 'error';
 
 function ProfilePage() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const { isConnected, address } = useWallet();
+  const { user, isAuthenticated, client } = useAuth();
 
   const [status, setStatus] = useState<Status>('loading');
   const [error, setError] = useState('');
   const [html, setHtml] = useState('');
   const [version, setVersion] = useState<string | undefined>();
 
-  // Arweave profile metadata — kept in state for edit flow
+  // Arweave profile metadata
   const [txId, setTxId] = useState<string | undefined>();
   const [profileOwner, setProfileOwner] = useState<string | undefined>();
   const [profileUsername, setProfileUsername] = useState<string | undefined>();
 
   // Edit state
   const [isOwner, setIsOwner] = useState(false);
-  const [editStatus, setEditStatus] = useState<'idle' | 'uploading' | 'done' | 'error'>('idle');
-  const [editError, setEditError] = useState('');
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -58,32 +55,14 @@ function ProfilePage() {
     return () => { cancelled = true; };
   }, [username]);
 
-  // Check ownership whenever wallet or profile owner changes
+  // Check ownership whenever auth or profile owner changes
   useEffect(() => {
-    if (isConnected && address && profileOwner) {
-      setIsOwner(address === profileOwner);
+    if (isAuthenticated && user?.arweave_address && profileOwner) {
+      setIsOwner(user.arweave_address === profileOwner);
     } else {
       setIsOwner(false);
     }
-  }, [isConnected, address, profileOwner]);
-
-  // Edit handler — re-upload the current HTML as a new version
-  const handleEdit = useCallback(async () => {
-    if (!profileOwner || !profileUsername) return;
-
-    setEditStatus('uploading');
-    setEditError('');
-
-    const result = await editProfile(html, profileUsername, profileOwner);
-
-    if (result.success) {
-      setEditStatus('done');
-      if (result.txId) setTxId(result.txId);
-    } else {
-      setEditStatus('error');
-      setEditError(result.error || 'Upload failed');
-    }
-  }, [html, profileOwner, profileUsername]);
+  }, [isAuthenticated, user, profileOwner]);
 
   // Loading state
   if (status === 'loading') {
@@ -131,55 +110,38 @@ function ProfilePage() {
     );
   }
 
-  // Success — render profile HTML + owner toolbar
+  // Success
   const blob = new Blob([html], { type: 'text/html' });
   const blobUrl = URL.createObjectURL(blob);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      {/* Owner toolbar — only visible to profile owner */}
-      {isOwner && (
-        <div className="bg-gray-900 text-white px-4 py-2.5 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium">You own this profile</span>
-            {version && (
-              <span className="text-xs text-gray-400">
-                Last deployed: {new Date(version).toLocaleDateString()}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate('/editor')}
-              className="px-4 py-1.5 text-sm font-medium rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-            >
-              Open Editor
-            </button>
-            <button
-              onClick={handleEdit}
-              disabled={editStatus === 'uploading'}
-              className="px-4 py-1.5 text-sm font-medium rounded-lg bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {editStatus === 'uploading' ? 'Uploading...' : editStatus === 'done' ? 'Updated!' : 'Re-deploy'}
-            </button>
-          </div>
-        </div>
-      )}
-      {editStatus === 'error' && editError && (
-        <div className="bg-red-50 border-b border-red-200 px-4 py-2 text-sm text-red-700">
-          {editError}
-        </div>
-      )}
-
-      {/* Profile iframe */}
+    <div className="min-h-screen bg-white">
       <iframe
         ref={iframeRef}
         src={blobUrl}
         title={`${username}'s ReBento`}
-        className="flex-1 w-full border-0"
-        style={{ minHeight: isOwner ? 'calc(100vh - 48px)' : '100vh', display: 'block' }}
+        className="w-full border-0"
+        style={{ height: '100vh', display: 'block' }}
         sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
       />
+
+      {/* Owner floating dock */}
+      {isOwner && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 p-2 rounded-2xl bg-white/90 backdrop-blur-xl shadow-2xl border border-gray-200"
+        >
+          <button
+            onClick={() => navigate('/editor')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+              <path d="m15 5 4 4" />
+            </svg>
+            Edit
+          </button>
+        </div>
+      )}
     </div>
   );
 }
