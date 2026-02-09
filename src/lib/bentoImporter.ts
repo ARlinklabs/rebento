@@ -3,15 +3,19 @@ import { mapBentoToRebento } from './bentoMapper';
 
 const CORS_PROXIES = [
   {
-    url: 'https://corsproxy.io/?url=',
-    parseBody: (res: Response) => res.text(),
-  },
-  {
     url: 'https://api.allorigins.win/get?url=',
     parseBody: async (res: Response) => {
       const data = await res.json();
       return data.contents as string;
     },
+  },
+  {
+    url: 'https://api.codetabs.com/v1/proxy?quest=',
+    parseBody: (res: Response) => res.text(),
+  },
+  {
+    url: 'https://corsproxy.io/?url=',
+    parseBody: (res: Response) => res.text(),
   },
 ];
 
