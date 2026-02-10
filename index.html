@@ -7,6 +7,16 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // SPA routing for static hosts (Arweave).
+      // Capture the real path before any manifest fallback might lose it.
+      (function () {
+        var p = location.pathname;
+        if (p && p !== '/' && p !== '/index.html') {
+          sessionStorage.setItem('spa-redirect', p);
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

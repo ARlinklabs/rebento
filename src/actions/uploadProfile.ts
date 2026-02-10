@@ -44,7 +44,7 @@ export async function uploadHtmlToArweave(
         { name: 'Content-Type', value: 'text/html' },
         { name: 'App-Name', value: 'rebento' },
         { name: 'Type', value: 'profile-page' },
-        { name: 'Username', value: username.toLowerCase().replace(/[^\x21-\x7e]/g, '') },
+        { name: 'Username', value: username.toLowerCase().replace(/[^a-z0-9._-]/g, '') },
         { name: 'Version', value: Date.now().toString() },
         { name: 'Owner', value: walletAddress },
       ],

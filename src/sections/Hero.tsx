@@ -123,8 +123,8 @@ const Hero = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (inputMode === 'claim') {
-      // Allow alphanumeric + special chars, block emojis/non-ASCII
-      setInputValue(e.target.value.toLowerCase().replace(/[^\x21-\x7e]/g, ''));
+      // Allow alphanumeric, dots, underscores, hyphens
+      setInputValue(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''));
     } else {
       setInputValue(e.target.value);
     }

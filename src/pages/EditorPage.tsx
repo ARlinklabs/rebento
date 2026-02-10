@@ -77,7 +77,7 @@ function EditorPage() {
 
     try {
       const { html } = await getPageHtml(profile, cards, theme);
-      const username = profile.name.replace(/^@/, '').toLowerCase().replace(/[^\x21-\x7e]/g, '') || 'anonymous';
+      const username = profile.name.replace(/^@/, '').toLowerCase().replace(/[^a-z0-9._-]/g, '') || 'anonymous';
 
       setToastMessage('Uploading to Arweave...');
       const result = await uploadHtmlToArweave(html, username, client, user?.arweave_address || '');
