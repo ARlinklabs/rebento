@@ -60,6 +60,11 @@ const Footer = () => {
             © 2026 Rebento. All rights reserved.
           </p>
 
+          {/* Version */}
+          <span className="text-[10px] text-rebento-text-secondary/40">
+            v0.1.0
+          </span>
+
           {/* Privacy Link */}
           <a
             href="/policy"
