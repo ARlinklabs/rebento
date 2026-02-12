@@ -26,3 +26,6 @@ Thumbs.db
 # IDEs
 .vscode/
 .idea/
+experiments/
+
+cache-deployment.json

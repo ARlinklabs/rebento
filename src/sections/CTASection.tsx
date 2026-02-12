@@ -222,7 +222,7 @@ const CTASection = () => {
                 }`}
               >
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-rebento-text-secondary font-medium text-sm whitespace-nowrap">
-                  {inputMode === 'claim' ? `${(import.meta.env.VITE_BASE_URL || 'https://rebento_arlink.ar.io').replace(/^https?:\/\//, '')}/` : 'bento.me/'}
+                  {inputMode === 'claim' ? `${(import.meta.env.VITE_BASE_URL || 'https://rebento_arlink.arweave.net').replace(/^https?:\/\//, '')}/` : 'bento.me/'}
                 </span>
                 <Input
                   type="text"

@@ -35,12 +35,11 @@ export async function editProfile(
   username: string,
   profileOwner: string | undefined,
   walletAddress: string | undefined,
-  client: { dispatch: (opts: any) => Promise<any> }
 ): Promise<UploadResult> {
   const validation = validateEditPermission(walletAddress, profileOwner);
   if (!validation.valid) {
     return { success: false, error: validation.error };
   }
 
-  return uploadHtmlToArweave(html, username, client, walletAddress!);
+  return uploadHtmlToArweave(html, username, walletAddress!);
 }

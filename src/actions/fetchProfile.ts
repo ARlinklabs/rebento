@@ -1,3 +1,6 @@
+import { cacheGet } from '@/lib/aoCache';
+
+// arweave.net is first — Turbo SDK uploads get fast finality indexing there.
 const GATEWAYS = [
   'https://arweave.net',
   'https://arweave.developerdao.com',
@@ -99,13 +102,41 @@ function pickBestEdge(edges: Edge[]) {
 
 /**
  * Query Arweave for the latest deployed ReBento profile page by username.
- * Tries multiple gateways since indexing can take minutes after upload.
+ *
+ * Two-tier lookup:
+ *   1. Fast: AO cache on HyperBEAM (~2s) — decentralized, instant after upload
+ *   2. Slow: GraphQL across gateways (~17min delay) — fully decentralized fallback
  */
 export async function fetchProfileFromArweave(
   username: string
 ): Promise<FetchProfileResult> {
   try {
     const normalised = username.toLowerCase().replace(/^@/, '');
+
+    // ── Tier 1: AO cache (fast path) ──
+    try {
+      const cached = await cacheGet(normalised);
+      if (cached?.txId) {
+        console.log('[fetchProfile] cache hit:', normalised, '→', cached.txId);
+        const html = await fetchHtmlFromGateways(cached.txId);
+        if (html) {
+          return {
+            success: true,
+            html,
+            txId: cached.txId,
+            owner: cached.owner,
+            username: normalised,
+            version: cached.version ? new Date(cached.version).toISOString() : undefined,
+          };
+        }
+        // Cache had txId but HTML not available yet — fall through to GraphQL
+        console.log('[fetchProfile] cache hit but HTML not available, falling back to GraphQL');
+      }
+    } catch (err) {
+      console.warn('[fetchProfile] cache lookup failed, falling back to GraphQL:', err);
+    }
+
+    // ── Tier 2: GraphQL (slow path, fully decentralized) ──
 
     // 1. Query all gateways in parallel, use first one that returns results
     const results = await Promise.all(

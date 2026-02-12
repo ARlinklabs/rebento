@@ -13,6 +13,7 @@ import { Toast } from '@/components/bento/Toast';
 import { useAuth } from 'arlinkauth/react';
 import { getPageHtml } from '@/actions/getHtml';
 import { uploadHtmlToArweave } from '@/actions/uploadProfile';
+import { cacheSet, cacheWarmup } from '@/lib/aoCache';
 import confetti from 'canvas-confetti';
 import { cn } from '@/lib/utils';
 import '@/App.css';
@@ -55,6 +56,9 @@ function EditorPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
 
+  // Warm up AO cache process in background
+  useEffect(() => { cacheWarmup(); }, []);
+
   // Auto-open import dialog if navigated with import URL
   useEffect(() => {
     if (importUrl) {
@@ -70,7 +74,6 @@ function EditorPage() {
   }, [claimedUsername, updateProfile]);
 
   const doUpload = async () => {
-    if (!client) return;
     setIsUploading(true);
     setToastType('info');
     setToastMessage('Generating page...');
@@ -80,15 +83,21 @@ function EditorPage() {
       const username = profile.name.replace(/^@/, '').toLowerCase().replace(/[^a-z0-9._-]/g, '') || 'anonymous';
 
       setToastMessage('Uploading to Arweave...');
-      const result = await uploadHtmlToArweave(html, username, client, user?.arweave_address || '');
+      const result = await uploadHtmlToArweave(html, username, user?.arweave_address || '');
 
       if (result.success && result.txId) {
-        const baseUrl = import.meta.env.VITE_BASE_URL || 'https://rebento_arlink.ar.io';
+        setToastMessage('Caching profile link...');
+        const cached = await cacheSet(username, result.txId, user?.arweave_address || '', client);
+
+        if (!cached) {
+          console.warn('[deploy] cache failed, link may be slow to resolve');
+        }
+
+        const baseUrl = import.meta.env.VITE_BASE_URL || 'https://rebento_arlink.arweave.net';
         const profileUrl = `${baseUrl}/${username}`;
         setDeployedUrl(profileUrl);
         setToastType('success');
-        setToastMessage(`Deployed! Your page is live.`);
-        // Fire confetti
+        setToastMessage('Deployed! Your page is live.');
         confetti({ particleCount: 150, spread: 80, origin: { y: 0.7 } });
         setTimeout(() => confetti({ particleCount: 80, spread: 100, origin: { y: 0.6 } }), 250);
       } else {
