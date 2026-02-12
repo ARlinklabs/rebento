@@ -299,7 +299,7 @@ const Hero = () => {
 
             {/* Input Field */}
             <div
-              className={`flex flex-col sm:flex-row items-center justify-center gap-3 max-w-xl mx-auto transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] ${isVisible
+              className={`flex flex-col sm:flex-row items-center justify-center gap-3 max-w-2xl mx-auto transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] ${isVisible
                 ? 'opacity-100 translate-y-0 scale-100'
                 : 'opacity-0 translate-y-10 scale-95'
                 }`}
@@ -315,7 +315,7 @@ const Hero = () => {
                   value={inputValue}
                   onChange={handleInputChange}
                   onKeyDown={(e) => e.key === 'Enter' && isValidInput && handleSubmit()}
-                  className={`w-full pr-4 py-6 text-lg rounded-full border-2 border-gray-200 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all ${inputMode === 'claim' ? 'pl-[10.5rem]' : 'pl-[6.5rem]'
+                  className={`w-full pr-4 py-6 text-lg rounded-full border-2 border-gray-200 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all ${inputMode === 'claim' ? 'pl-[16rem]' : 'pl-[6.5rem]'
                     }`}
                 />
               </div>
